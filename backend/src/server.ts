@@ -10,7 +10,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 //connect to database
-connectDB();
 const app = express();
 app.use(express.json());
 
@@ -26,5 +25,6 @@ app.use(errorHandler);
 app.use("/api/auth", authRouter);
 
 app.listen(port, () => {
+  connectDB();
   console.log("Server running on port 8000");
 });
