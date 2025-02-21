@@ -81,3 +81,18 @@ export const login = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const refresh = async (req: Request, res: Response) => {
+  try {
+    res.status(200).json({
+      success: true,
+      message: "User refreshed successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
