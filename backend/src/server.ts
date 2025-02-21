@@ -20,8 +20,8 @@ app.get("/", async (req: Request, res: Response) => {
 //routes
 app.use("/api/products", productsRouter);
 app.use("/api/users", userRouter);
-app.use(errorHandler);
 app.use("/api/auth", authRouter);
+app.use(errorHandler);
 
 app.listen(port, () => {
   //connect to database
