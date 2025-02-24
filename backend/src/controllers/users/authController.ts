@@ -6,17 +6,19 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { name, email, phone, password } = req.body;
     if (!name || !email || !phone || !password) {
-      return res.status(400).json({
+      res.status(400).json({
         status: false,
         message: "All fields are required",
       });
+      return;
     }
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(200).json({
+      res.status(200).json({
         success: false,
         message: "User already exists",
       });
+      return;
     }
     const passwordHash = await bcrypt.hash(password, 10);
     const newUser = new User({
@@ -61,24 +63,27 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      return res.status(400).json({
+       res.status(400).json({
         success: false,
         message: "All fields are required",
       });
+      return;
     }
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         status: false,
         message: "User not found",
       });
+      return;
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: "Invalid credentials",
       });
+      return;
     }
     const accessToken = jwt.sign(
       { userId: user._id },
@@ -113,20 +118,22 @@ export const refresh = async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Refresh token is required",
       });
+      return;
     }
     const decoded = jwt.verify(
       refreshToken,
       process.env.JWT_REFRESH_SECRET as string
     ) as JwtPayload;
     if (!decoded || typeof decoded === "string") {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: "Invalid refresh token",
       });
+      return;
     }
     const accessToken = jwt.sign(
       { userId: decoded.userId },
