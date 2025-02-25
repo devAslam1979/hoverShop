@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import User from "../../models/User";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import Cart from "../../models/Cart";
+
 export const register = async (req: Request, res: Response) => {
   try {
     const { name, email, phone, password } = req.body;
@@ -27,7 +29,11 @@ export const register = async (req: Request, res: Response) => {
       phone,
       password: passwordHash,
     });
-    await newUser.save();
+    const success =await newUser.save();
+    const cart = new Cart ({
+      user: success._id
+    })
+    await cart.save();
     const accessToken = jwt.sign(
       { userId: newUser._id },
       process.env.JWT_ACCESS_SECRET as string,
