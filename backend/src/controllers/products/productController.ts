@@ -4,6 +4,7 @@ import { CustomError } from "../../types/customError";
 import Review from "../../models/Review";
 import { nextTick } from "process";
 import Cart from "../../models/Cart";
+import ItemOrdered from "../../models/ItemOrdered";
 
 const getAllProducts = async (
   req: Request,
@@ -28,13 +29,18 @@ const getAllProducts = async (
     if (req.query.rating) {
       filters = { ...filters, rating: { $gte: Number(req.query.rating) } };
     }
-    if (req.query.ltprice && Number(req.query.ltprice) > 0 && req.query.gtprice && Number(req.query.gtprice) > 0) {
-      filters = { 
-        ...filters, 
-        price: { 
-          $gt: Number(req.query.gtprice), 
-          $lt: Number(req.query.ltprice) 
-        } 
+    if (
+      req.query.ltprice &&
+      Number(req.query.ltprice) > 0 &&
+      req.query.gtprice &&
+      Number(req.query.gtprice) > 0
+    ) {
+      filters = {
+        ...filters,
+        price: {
+          $gt: Number(req.query.gtprice),
+          $lt: Number(req.query.ltprice),
+        },
       };
     } else {
       if (req.query.ltprice && Number(req.query.ltprice) > 0) {
@@ -44,7 +50,7 @@ const getAllProducts = async (
         filters = { ...filters, price: { $gt: Number(req.query.gtprice) } };
       }
     }
-    
+
     if (req.query.searchText) {
       const keywords = req.query.searchText.toString().split(" ");
       filters = {
@@ -68,7 +74,7 @@ const getAllProducts = async (
       .limit(8)
       .skip(8 * (page - 1));
     res.send(dbresponse);
-  } catch (err:any) {
+  } catch (err: any) {
     const error = new CustomError(err.message, 205);
     next(error);
   }
@@ -275,24 +281,65 @@ const addItemToCart = async (
   res: Response,
   next: NextFunction
 ) => {
-  const productId = req.params.productId;
+  const productId = req.body.productId;
+  const numberOfItems = req.body.quantity;
   const userId = req.body.userId;
   try {
     const cart = await Cart.findOne({ user: userId });
     const currentProduct = await Product.findById({ _id: productId });
-    console.log("Finding items", cart, currentProduct);
     if (cart && currentProduct) {
-      cart.products.push(currentProduct._id);
-      cart.total = Math.round((cart.total + currentProduct.price) * 100) / 100;
-      cart.quantity = cart.quantity + 1;
-      const success = await cart.save();
-      res.status(200).json({ message: "Added to cart", cart: success });
+      const currentCartItem = await ItemOrdered.findOne({ product: productId });
+      console.log("Trying to find if it exists", currentCartItem);
+      if (!currentCartItem) {
+        const product = new ItemOrdered({
+          product: currentProduct,
+          quantity: numberOfItems,
+        });
+        const productSaved = await product.save();
+        cart.products.push(productSaved._id);
+        // cart.total =0
+        cart.total =
+          cart.total +
+          Number((currentProduct.price * productSaved.quantity).toFixed(2));
+        cart.quantity = cart.quantity + productSaved.quantity;
+        const success = await cart.save();
+        const populatedCart = await success.populate({
+          path: "products",
+          select: "product quantity",
+        });
+        console.log(populatedCart, "Not working 1");
+        res.status(201).json(populatedCart);
+      } else {
+        const previousItemQuantity = currentCartItem.quantity;
+        currentCartItem.product = productId;
+        currentCartItem.quantity = numberOfItems;
+        await currentCartItem.save();
+        // cart.total =0
+        cart.total =
+          cart.total +
+          Number(
+            (
+              currentProduct.price * currentCartItem.quantity -
+              currentProduct.price * previousItemQuantity
+            ).toFixed(2)
+          );
+        // cart.quantity = 0
+        cart.quantity =
+          cart.quantity + currentCartItem.quantity - previousItemQuantity;
+        const success = await cart.save();
+        const populatedCart = await success.populate({
+          path: "products",
+          select: "product quantity",
+        });
+        console.log(populatedCart, "Not working 2");
+        res.status(201).json(populatedCart);
+      }
     } else {
       const error = new CustomError("Something went wrong", 404);
       next(error);
     }
-  } catch (err) {
-    const error = new CustomError("Something went wrong", 404);
+  } catch (err: any) {
+    const error = new CustomError(err.message, 404);
     next(error);
   }
 };
@@ -316,6 +363,10 @@ const updateProduct = async (
     next(error);
   }
 };
+
+const placeYourOrder = async (req: Request, res: Response, next: NextFunction)=>{
+  
+}
 
 const getAllReviews = async (
   req: Request,
@@ -345,4 +396,5 @@ export {
   addItemToCart,
   updateProduct,
   getAllReviews,
+  placeYourOrder
 };

@@ -8,7 +8,7 @@ const cartSchema = new Schema({
   },
   products: {
     type: [Schema.Types.ObjectId],
-    ref: "Product",
+    ref: "ItemOrdered",
   },
   quantity: {
     type: Number,
