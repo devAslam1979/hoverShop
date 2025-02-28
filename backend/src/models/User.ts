@@ -1,4 +1,15 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
+
+const addressDetails = new mongoose.Schema({
+  allAddresses: {
+    type: [Schema.Types.ObjectId],
+    ref: "Address",
+  },
+  currentAddress: {
+    type: Schema.Types.ObjectId,
+    ref: "Address",
+  }
+})
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -20,6 +31,9 @@ const userSchema = new mongoose.Schema({
   cart: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Cart",
+  },
+  address: {
+    type: addressDetails,
   },
 });
 

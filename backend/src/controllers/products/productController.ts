@@ -396,5 +396,5 @@ export {
   addItemToCart,
   updateProduct,
   getAllReviews,
-  placeYourOrder
+  placeYourOrder,
 };
