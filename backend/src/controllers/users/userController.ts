@@ -2,7 +2,6 @@ import { NextFunction, Response, Request } from "express";
 import User from "../../models/User";
 import Address from "../../models/Address";
 import { CustomError } from "../../types/customError";
-import { error } from "console";
 
 const createAddress = async (
   req: Request,
@@ -112,12 +111,12 @@ const changeAddress = async (
         .status(201)
         .json({ message: "Current address saved", address: updatedValue });
     } catch (err: any) {
-      const Error = new CustomError(err.message, 404);
-      next(Error);
+      const error = new CustomError(err.message, 404);
+      next(error);
     }
   } else {
-    const Error = new CustomError("User or address not found", 404);
-    next(Error);
+    const error = new CustomError("User or address not found", 404);
+    next(error);
   }
 };
 
